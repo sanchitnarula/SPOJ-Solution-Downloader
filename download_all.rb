@@ -2,6 +2,7 @@
 
 require 'mechanize'
 require 'fileutils'
+require 'highline/import'
 
 def SockError
 	puts 'Please connect to internet.'
@@ -21,7 +22,7 @@ def createFile (probname,subid,code)
 	FileUtils.mkdir_p(dirname) unless Dir.exists?(dirname)
 	dirname="SPOJ/#{probname}"
 	FileUtils.mkdir_p(dirname) unless Dir.exists?(dirname)
-	filename="#{dirname}/#{subid}.cpp"
+	filename="#{dirname}/#{subid}"
 	target=open(filename,'w')
 	target.write(code)
 	target.close
@@ -32,14 +33,17 @@ def invalidCredentials
 	puts "Invalid Credentials !!"
 		exit(1)
 end
-
+def checkValidation (username,password)
+	if username.length==0 || password.length==0
+		invalidCredentials()
+	end
+end
 agent = Mechanize.new
 
 print "Spoj Username : "
-	username=gets.chomp()
-print "Spoj Password : "
-	password=gets.chomp()
-
+username=gets.chomp()
+password = ask("Spoj password: ") { |q| q.echo = false }
+checkValidation(username,password)
 begin
 	page = agent.get("http://www.spoj.com/")
 	form = page.form_with(:id => 'login-form')
@@ -47,7 +51,10 @@ begin
 	form.password = password
 	page = form.submit
 
-    str=agent.get("http://www.spoj.com/status/#{username}/signedlist/").body
+	signedpage=agent.get("http://www.spoj.com/status/#{username}/signedlist/")
+    str=signedpage.body
+
+   
 	if str.length == 0
 		invalidCredentials()
 	end
